@@ -1,0 +1,4 @@
+	.include "src/rust.o"
+
+	.space 0xC
+	.include "src/money.o"
