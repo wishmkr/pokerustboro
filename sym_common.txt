@@ -1,0 +1,5 @@
+	.align 4
+	.align 4
+	.include "rust.o"
+	.align 4
+	.align 4
