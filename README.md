@@ -6,8 +6,8 @@ Based on the pret/pokeemerald decompilation, the project replaces existing C mod
 
 ## Current Status
 
-- 304/310 C modules migrated to Rust
-- 790 Rust tests passing
+- 310/310 C modules migrated to Rust
+- 840 Rust tests passing
 - Produces a valid `pokerustboro.gba`
 - Targets the ARM7TDMI processor used by the Game Boy Advance
 - Major systems are still being actively ported
