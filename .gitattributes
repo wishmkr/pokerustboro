@@ -24,3 +24,19 @@ Makefile text eol=lf
 
 *.h linguist-language=C
 *.inc linguist-language=Assembly
+
+# GitHub's language statistics: the game's code is the Rust crate. The rest
+# is pret's build tooling and game data (maps, scripts, text, music written
+# in assembler syntax, assembled into bytes; no code), kept only to build
+# the ROM.
+tools/** linguist-vendored
+include/** linguist-vendored
+constants/** linguist-vendored
+asm/** linguist-vendored
+data/** linguist-vendored
+sound/** linguist-vendored
+Makefile linguist-vendored
+*.mk linguist-vendored
+*.ld linguist-vendored
+build_tools.sh linguist-vendored
+rust/assets/*.mk linguist-generated
